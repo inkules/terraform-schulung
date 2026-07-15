@@ -1,0 +1,25 @@
+# Terraform selbst
+.terraform/
+.terraform.tfstate.lock.info
+*.tfstate
+*.tfstate.*
+*.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.tfvars.json
+
+# Generierte Kurs-Artefakte (von local_file/templatefile()-Beispielen erzeugt,
+# u.a. greeting.txt, output/index.html, output/raetsel.html, ...)
+*.txt
+*.html
+
+# Playground: von den Übungen/Lösungen erzeugte Ausgaben. Explizit statt nur
+# über *.txt/*.html oben, damit auch künftige Aufgaben mit anderen
+# Dateiendungen (z.B. .json, .csv) automatisch ignoriert werden, ohne dass
+# diese Datei jedes Mal angepasst werden muss.
+playground/**/output/
+playground/**/*.tfstate.d/

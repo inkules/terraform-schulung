@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>${titel}</title>
+<style>
+  :root { --farbe: ${farbe}; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: #f4f2fa; margin: 0; padding: 2rem; color: #1a1a1a; }
+  .card { max-width: 640px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  h1 { color: var(--farbe); margin-top: 0; font-size: 1.4rem; }
+  .frage p { font-weight: 600; margin-bottom: 0.8rem; }
+  .antwort { display: block; width: 100%; text-align: left; padding: 0.6rem 0.9rem; margin-bottom: 0.4rem; border: 2px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 0.95rem; }
+  .antwort:hover { border-color: var(--farbe); }
+  .antwort.richtig { border-color: #4caf50; background: #eafaf0; }
+  .antwort.falsch { border-color: #e53935; background: #fdecea; }
+  #ergebnis { text-align: center; font-size: 1.3rem; font-weight: 700; margin-top: 1.5rem; display: none; }
+  #fortschritt { text-align: right; color: #888; font-size: 0.85rem; margin-bottom: 1rem; }
+  #weiter { background: var(--farbe); color: #fff; border: none; padding: 0.6rem 1.4rem; border-radius: 8px; cursor: pointer; font-size: 0.95rem; display: none; margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>${titel}</h1>
+  <div id="fortschritt"></div>
+  <div id="quiz"></div>
+  <button id="weiter">Nächste Frage</button>
+  <div id="ergebnis"></div>
+</div>
+<script>
+  var fragen = [
+    {
+      frage: "Was beschreibt man in einer deklarativen Sprache wie HCL?",
+      antworten: ["Die einzelnen Arbeitsschritte", "Den gewünschten Endzustand", "Nur mögliche Fehler"],
+      richtig: 1
+    },
+    {
+      frage: "Ohne welche Terraform-Komponente wüsste Terraform nicht, ob eine Ressource schon existiert?",
+      antworten: ["Provider", "State", "Backend-Block"],
+      richtig: 1
+    },
+    {
+      frage: "Was macht ein Provider?",
+      antworten: ["Formatiert HCL-Code", "Kommuniziert per API mit einer Plattform", "Speichert Variablenwerte"],
+      richtig: 1
+    },
+    {
+      frage: "In resource \"local_file\" \"greeting\" { ... } - was ist \"greeting\"?",
+      antworten: ["Der Ressourcentyp", "Ein Attribut", "Der frei wählbare Name"],
+      richtig: 2
+    },
+    {
+      frage: "Welche Funktion wandelt einen String in Großbuchstaben um?",
+      antworten: ["upper()", "join()", "format()"],
+      richtig: 0
+    },
+    {
+      frage: "Was ist path.module?",
+      antworten: ["Der aktuelle Terraform-Workspace", "Verweis auf den Ordner der aktuellen .tf-Datei", "Ein Pfad im State"],
+      richtig: 1
+    },
+    {
+      frage: "Welche Rangfolge gilt bei mehrfach gesetzten Variablen?",
+      antworten: ["-var schlägt tfvars schlägt Default", "tfvars schlägt -var schlägt Default", "Default schlägt tfvars schlägt -var"],
+      richtig: 0
+    },
+    {
+      frage: "Was passiert, wenn eine Pflichtvariable ohne Default nirgends gesetzt wird?",
+      antworten: ["Terraform nimmt einen leeren String", "Fehler: No value for required variable", "Die Ressource wird übersprungen"],
+      richtig: 1
+    },
+    {
+      frage: "Was steht trotz sensitive = true weiterhin im Klartext im State?",
+      antworten: ["Der Ressourcenname", "Der eigentliche Wert", "Der Dateiname"],
+      richtig: 1
+    },
+    {
+      frage: "Womit benennt man eine Ressource im State um, ohne sie neu zu erstellen?",
+      antworten: ["terraform state rm", "terraform state mv", "terraform apply -replace"],
+      richtig: 1
+    },
+    {
+      frage: "Was zeigt terraform apply -refresh-only?",
+      antworten: ["Wendet Änderungen sofort an", "Zeigt Drift, ohne etwas zu ändern", "Löscht den State"],
+      richtig: 1
+    },
+    {
+      frage: "count oder for_each: Womit wird beim Entfernen eines mittleren Elements nur die dazugehörige Ressource gelöscht?",
+      antworten: ["count", "for_each"],
+      richtig: 1
+    },
+    {
+      frage: "Was ist die korrekte Syntax für einen bedingten Ausdruck in HCL?",
+      antworten: ["bedingung ? a : b", "if bedingung then a else b", "match bedingung { ... }"],
+      richtig: 0
+    },
+    {
+      frage: "Was gibt ein Modul über einen output-Block nach außen zurück?",
+      antworten: ["locals", "Werte, die Aufrufer brauchen könnten", "Provider-Konfiguration"],
+      richtig: 1
+    },
+    {
+      frage: "Bei welchem Plan-Symbol wird eine Ressource gelöscht UND neu erstellt?",
+      antworten: ["~", "-/+", "+"],
+      richtig: 1
+    }
+  ];
+  var index = 0;
+  var punkte = 0;
+  var beantwortet = false;
+
+  var quizEl = document.getElementById("quiz");
+  var fortschrittEl = document.getElementById("fortschritt");
+  var weiterBtn = document.getElementById("weiter");
+  var ergebnisEl = document.getElementById("ergebnis");
+
+  function zeigeFrage() {
+    beantwortet = false;
+    weiterBtn.style.display = "none";
+    var f = fragen[index];
+    fortschrittEl.textContent = "Frage " + (index + 1) + " von " + fragen.length + " · " + punkte + " Punkte";
+    quizEl.innerHTML = "";
+    var frageDiv = document.createElement("div");
+    frageDiv.className = "frage";
+    var p = document.createElement("p");
+    p.textContent = f.frage;
+    frageDiv.appendChild(p);
+    f.antworten.forEach(function (antwort, i) {
+      var btn = document.createElement("button");
+      btn.className = "antwort";
+      btn.textContent = antwort;
+      btn.onclick = function () { beantworte(i, btn); };
+      frageDiv.appendChild(btn);
+    });
+    quizEl.appendChild(frageDiv);
+  }
+
+  function beantworte(i, btn) {
+    if (beantwortet) return;
+    beantwortet = true;
+    var f = fragen[index];
+    var buttons = document.querySelectorAll(".antwort");
+    buttons.forEach(function (b, bi) {
+      if (bi === f.richtig) b.classList.add("richtig");
+      else if (bi === i) b.classList.add("falsch");
+    });
+    if (i === f.richtig) punkte++;
+    weiterBtn.style.display = "inline-block";
+  }
+
+  weiterBtn.onclick = function () {
+    index++;
+    if (index < fragen.length) {
+      zeigeFrage();
+    } else {
+      quizEl.innerHTML = "";
+      fortschrittEl.textContent = "";
+      weiterBtn.style.display = "none";
+      ergebnisEl.style.display = "block";
+      ergebnisEl.textContent = "Fertig! " + punkte + " von " + fragen.length + " richtig.";
+    }
+  };
+
+  zeigeFrage();
+</script>
+</body>
+</html>

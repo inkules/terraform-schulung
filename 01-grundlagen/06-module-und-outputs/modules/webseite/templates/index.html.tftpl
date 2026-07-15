@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>${titel}</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: ${farbe};
+      color: white;
+      text-align: center;
+      padding: 4rem 1rem;
+    }
+    a { color: white; }
+  </style>
+</head>
+<body>
+  <h1>${titel}</h1>
+  <p>${tagline}</p>
+  <ul>
+%{ for link in links }
+    <li><a href="${link.url}">${link.label}</a></li>
+%{ endfor }
+  </ul>
+  <p><small>Erstellt vom Terraform-Modul "webseite"</small></p>
+</body>
+</html>
