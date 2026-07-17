@@ -4,6 +4,24 @@
 
 ⚠️ **Rein konzeptionell:** Für dieses Kapitel gibt es keinen Übungsordner und keinen Cloud-Zugang in dieser Schulung. Der Code unten ist syntaktisch korrekt und folgt der offiziellen [azurerm-Provider-Dokumentation](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_web_app), wurde aber **nicht live getestet** - anders als der Rest dieses Kurses, wo jedes Beispiel tatsächlich ausgeführt wurde. Wer einen eigenen Azure-Account hat, kann das Beispiel gerne selbst ausprobieren.
 
+## Voraussetzung: Bei Azure anmelden
+
+Anders als der `local`-Provider braucht `azurerm` eine echte Anmeldung. Am einfachsten lokal über die Azure CLI, **vor** dem ersten `terraform init`/`plan`:
+
+```bash
+az login
+```
+
+Das öffnet einen Browser zum Login und wählt danach ein Abonnement (Subscription) aus - bei mehreren Abos ggf. zusätzlich `az account set --subscription "<name-oder-id>"`. Der `azurerm`-Provider erkennt diese CLI-Session automatisch, ganz ohne Zugangsdaten in der Konfiguration:
+
+```hcl
+provider "azurerm" {
+  features {}
+}
+```
+
+Der `features {}`-Block ist bei `azurerm` Pflicht, auch leer - ohne ihn bricht schon `terraform init` ab. Für CI/CD-Pipelines (siehe [CI/CD-Pipeline für Terraform](../04-ci-cd/01-ci-cd-pipeline.md)) ist `az login` keine Option, dort übernimmt stattdessen ein Service Principal per Umgebungsvariablen die Anmeldung - gleiches Prinzip wie bei `TF_VAR_`-Umgebungsvariablen für Secrets, nur provider-eigene Variablen (`ARM_CLIENT_ID`, `ARM_CLIENT_SECRET`, `ARM_TENANT_ID`, `ARM_SUBSCRIPTION_ID`).
+
 ## Die drei Bausteine einer Azure Web App
 
 Eine laufende Web-App in Azure besteht aus drei Ressourcen, die aufeinander aufbauen:
